@@ -4,11 +4,46 @@ Polls a [Transmission](https://transmissionbt.com/) RPC endpoint and exports tor
 
 ## Usage
 
+# Docker 🐳
+
+NOTICE: When running in docker make sure you can reach the Transmission RPC endpoint from the container.
+
+## CLI
 ```sh
-go run .
+docker run -d --name transmission-otel \
+  -e TRANSMISSION_HOST=<host> \
+  -e TRANSMISSION_PORT=<port> \
+  -e TRANSMISSION_USER=<user> \
+  -e TRANSMISSION_PASSWORD=<password> \
+  -e TRANSMISSION_OTEL_ENDPOINT=<otel_endpoint> \
+  git.aads.cloud/aad/bitcoind-metrics-exporter:latest
 ```
 
-By default it connects to `http://127.0.0.1:9091/transmission/rpc` and exports metrics to `http://localhost:4318` every 10s. Configure via environment variables (see below).
+## Compose
+
+```yaml
+services:
+  transmission-otel:
+    image: git.aads.cloud/aad/bitcoind-metrics-exporter:latest
+    environment:
+      TRANSMISSION_HOST: <host>
+      TRANSMISSION_PORT: <port>
+      TRANSMISSION_USER: <user>
+      TRANSMISSION_PASSWORD: <password>
+      TRANSMISSION_OTEL_ENDPOINT: <otel_endpoint>
+```
+
+
+# Install as systemd service
+```bash
+curl -fsSL https://git.aads.cloud/api/packages/aad/debian/repository.key | sudo gpg --dearmor -o /usr/share/keyrings/transmission-otel.gpg
+echo "deb [signed-by=/usr/share/keyrings/transmission-otel.gpg] https://git.aads.cloud/api/packages/aad/debian stable main" | sudo tee /etc/apt/sources.list.d/transmission-otel.list
+sudo apt update
+sudo apt install transmission-otel
+sudo $EDITOR /etc/transmission-otel/transmission-otel.env
+sudo systemctl start transmission-otel
+```
+
 
 ## Configuration
 
@@ -38,23 +73,9 @@ All settings are read from `TRANSMISSION_`-prefixed environment variables.
 | `download_speed_bytes` | gauge | – | Current download speed, bytes/sec. |
 | `upload_speed_bytes` | gauge | – | Current upload speed, bytes/sec. |
 | `free_space_bytes` | gauge | `path` | Free disk space at each path configured via `TRANSMISSION_SPACE_CHECK_PATH`. |
+| `total_download_bytes` | gauge | – | Total download bytes. |
+| `total_upload_bytes` | gauge | – | Total upload bytes. |
 
-### Adding a new metric
 
-Declare a gauge in `otel/metrics/metrics.go`:
-
-```go
-var MyMetric = NewGauge("my_metric", "Description")
-// or, for one value per item (e.g. per path/disk):
-var MyMetric = NewLabeledGauge("my_metric", "Description", "label_key")
-```
-
-Then set its value from the fetch loop in `fetcher/fetcher.go`:
-
-```go
-otelmetrics.MyMetric.Set(value)
-// or
-otelmetrics.MyMetric.Set(label, value)
-```
 
 No further registration is needed — every declared gauge is wired into the OTel meter automatically.
