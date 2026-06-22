@@ -1,0 +1,60 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  release:
+    runs-on: buildah-full
+    env:
+      STORAGE_DRIVER: vfs
+      BUILDAH_ISOLATION: chroot
+      BUILDAH_FORMAT: docker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Run GoReleaser
+        uses: https://git.aads.cloud/mirrors/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITEA_TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+      - name: Publish Debian packages
+        run: |
+          for f in dist/*.deb; do
+            curl -sS --fail-with-body -w '\nHTTP %{http_code}\n' \
+              -H "Authorization: token ${{ secrets.PACKAGE_TOKEN }}" \
+              --upload-file "$f" \
+              "https://git.aads.cloud/api/packages/aad/debian/pool/stable/main/upload"
+          done
+      - name: Registry login
+        run: |
+          buildah login -u "${{ github.repository_owner }}" \
+            -p "${{ secrets.PACKAGE_TOKEN }}" git.aads.cloud
+      - name: Build and push multi-arch image
+        run: |
+          IMG=git.aads.cloud/aad/transmission-otel
+          VERSION="${GITHUB_REF_NAME#v}"
+          AMD64_BIN=$(find dist -type f -name transmission-otel -path '*linux_amd64*' | head -n1)
+          ARM64_BIN=$(find dist -type f -name transmission-otel -path '*linux_arm64*' | head -n1)
+          cp "$AMD64_BIN" ./transmission-otel.amd64
+          cp "$ARM64_BIN" ./transmission-otel.arm64
+          buildah build --arch amd64 --build-arg TARGET_BINARY=transmission-otel.amd64 -t "$IMG:$VERSION-amd64" -f Containerfile .
+          buildah build --arch arm64 --variant v8 --build-arg TARGET_BINARY=transmission-otel.arm64 -t "$IMG:$VERSION-arm64v8" -f Containerfile .
+          buildah push "$IMG:$VERSION-amd64"
+          buildah push "$IMG:$VERSION-arm64v8"
+          for TAG in "$VERSION" latest; do
+            buildah manifest create "$IMG:$TAG"
+            buildah manifest add "$IMG:$TAG" "docker://$IMG:$VERSION-amd64"
+            buildah manifest add "$IMG:$TAG" "docker://$IMG:$VERSION-arm64v8"
+            buildah manifest push --all "$IMG:$TAG" "docker://$IMG:$TAG"
+          done
