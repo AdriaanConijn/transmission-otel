@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"transmission-otel/config"
-	otelmetrics "transmission-otel/otel/metrics"
+	"git.aads.cloud/aad/transmission-otel/config"
+	otelmetrics "git.aads.cloud/aad/transmission-otel/otel/metrics"
 
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"

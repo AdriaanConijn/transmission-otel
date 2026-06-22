@@ -9,7 +9,7 @@ import (
 
 	"github.com/hekmon/transmissionrpc/v3"
 
-	"transmission-otel/config"
+	"git.aads.cloud/aad/transmission-otel/config"
 )
 
 func New() (*transmissionrpc.Client, error) {

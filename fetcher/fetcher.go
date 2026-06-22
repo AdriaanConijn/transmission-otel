@@ -7,8 +7,9 @@ import (
 	"github.com/hekmon/transmissionrpc/v3"
 	"github.com/sirupsen/logrus"
 
-	"transmission-otel/config"
-	otelmetrics "transmission-otel/otel/metrics"
+	"git.aads.cloud/aad/transmission-otel/config"
+
+	otelmetrics "git.aads.cloud/aad/transmission-otel/otel/metrics"
 )
 
 var log = logrus.WithFields(logrus.Fields{

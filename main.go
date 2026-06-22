@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"transmission-otel/config"
-	"transmission-otel/fetcher"
-	otelexporter "transmission-otel/otel"
+	"git.aads.cloud/aad/transmission-otel/config"
+	"git.aads.cloud/aad/transmission-otel/fetcher"
+	otelexporter "git.aads.cloud/aad/transmission-otel/otel"
 )
 
 func main() {

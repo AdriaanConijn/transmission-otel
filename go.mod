@@ -1,4 +1,4 @@
-module transmission-otel
+module git.aads.cloud/aad/transmission-otel
 
 go 1.26.4
 
