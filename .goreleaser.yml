@@ -1,0 +1,42 @@
+project_name: transmission-otel
+force_token: gitea
+gitea_urls:
+  api: https://git.aads.cloud/api/v1/
+  download: https://git.aads.cloud/
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    binary: transmission-otel
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+nfpms:
+  - package_name: transmission-otel
+    file_name_template: "{{ .ConventionalFileName }}"
+    vendor: aad
+    homepage: https://git.aads.cloud/aad/transmission-otel
+    maintainer: Adriaan Conijn <adriaan.conijn@gmail.com>
+    description: Prometheus/OpenTelemetry exporter for bitcoind metrics
+    license: GPL-3.0
+    formats:
+      - deb
+    bindir: /usr/bin
+    contents:
+      - src: packaging/transmission-otel.service
+        dst: /lib/systemd/system/transmission-otel.service
+      - src: packaging/transmission-otel.env
+        dst: /etc/transmission-otel/transmission-otel.env
+        type: config|noreplace
+    scripts:
+      postinstall: packaging/postinstall.sh
+      preremove: packaging/preremove.sh
+      postremove: packaging/postremove.sh
+
+release:
+  gitea:
+    owner: aad
+    name: transmission-otel

@@ -1,0 +1,15 @@
+[Unit]
+Description=transmission-otel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=transmission-otel
+EnvironmentFile=-/etc/transmission-otel/transmission-otel.env
+ExecStart=/usr/bin/transmission-otel
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
